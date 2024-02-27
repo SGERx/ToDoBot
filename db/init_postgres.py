@@ -63,6 +63,7 @@ def execute_tasks_table_creation(connection_parameters):
     try:
         create_tasks_query = '''CREATE TABLE tasks (
         id SERIAL PRIMARY KEY,
+        user_id INTEGER REFERENCES user(id),
         title VARCHAR(255) NOT NULL,
         description TEXT NOT NULL,
         task_date DATE,
