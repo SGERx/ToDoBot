@@ -1,4 +1,6 @@
+# -*- coding: utf-8 -*-
 import os
+import sys
 from pathlib import Path
 
 import psycopg2
@@ -7,6 +9,8 @@ from loguru import logger
 from psycopg2 import sql
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
+# reload(sys)
+# sys.setdefaultencoding('utf-8')
 logger.add("logs/db_script.log", rotation="100 MB", level="INFO")
 
 
@@ -26,7 +30,8 @@ def get_connection_params_from_env():
         'user': os.getenv('DB_USER'),
         'password': os.getenv('DB_PASSWORD'),
         'host': os.getenv('DB_HOST'),
-        'port': os.getenv('DB_PORT')
+        'port': os.getenv('DB_PORT'),
+        'client_encoding': 'UTF8',
     }
 
 
@@ -34,24 +39,48 @@ def execute_db_creation(connection_parameters, database_name):
     logger.info("Запуск функции {func}", func="execute_db_creation")
     try:
         connection_parameters.pop('dbname', None)
+        connection_parameters['client_encoding'] = 'UTF8'
         connection = psycopg2.connect(**connection_parameters)
         connection.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
 
         cursor = connection.cursor()
         cursor.execute("ROLLBACK;")
-
         cursor.execute(sql.SQL("CREATE DATABASE {}").format(
             sql.Identifier(database_name)))
-
+        cursor.execute(sql.SQL("CREATE ROLE user WITH LOGIN PASSWORD 'root';"))
+        cursor.execute(sql.SQL("GRANT ALL PRIVILEGES ON DATABASE your_database TO user;"))
         connection.commit()
         logger.info(f"Создание базы данных '{database_name}' завершено")
+        connection.close()
     except psycopg2.Error as e:
         logger.info(f"Ошибка при создании базы данных: {e}")
 
-    finally:
-        if connection:
-            connection.close()
     logger.info("Завершение функции {func}", func="load_environment_variables")
+
+
+def execute_users_table_creation(connection_parameters):
+    logger.info("Запуск функции {func}", func="execute_users_table_creation")
+    logger.info(f"Параметры для создания таблицы - {connection_parameters}")
+    connection_parameters['client_encoding'] = 'UTF8'
+    connection = psycopg2.connect(**connection_parameters)
+    cursor = connection.cursor()
+
+    try:
+        create_tasks_query = '''CREATE TABLE users (
+        user_id SERIAL PRIMARY KEY,
+        username VARCHAR(255) NOT NULL
+        );
+        '''
+        cursor.execute(create_tasks_query)
+        logger.info("Таблица tasks создана")
+    except Exception as e:
+        connection.rollback()
+        logger.info(f"Ошибка создания таблицы tasks - исключение {e}")
+    finally:
+        connection.commit()
+        connection.close()
+        logger.info("Применение изменений, внесенных в базу данных ")
+    logger.info("Завершение функции {func}", func="execute_users_table_creation")
 
 
 def execute_tasks_table_creation(connection_parameters):
@@ -63,7 +92,7 @@ def execute_tasks_table_creation(connection_parameters):
     try:
         create_tasks_query = '''CREATE TABLE tasks (
         id SERIAL PRIMARY KEY,
-        user_id INTEGER REFERENCES user(id),
+        user_id INTEGER REFERENCES users(user_id),
         title VARCHAR(255) NOT NULL,
         description TEXT NOT NULL,
         task_date DATE,
@@ -92,5 +121,6 @@ if __name__ == "__main__":
     database_name = connection_parameters['dbname']
     logger.info(f"Имя создаваемой базы данных - {database_name}")
     execute_db_creation(connection_parameters, database_name)
+    execute_users_table_creation(creation_params)
     execute_tasks_table_creation(creation_params)
     logger.info("Завершение файла {file} через __main__", file="init_postgres.py")

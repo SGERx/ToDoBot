@@ -1,4 +1,6 @@
 import functools
+
+# from app.core.config import create_async_db_engine
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base, declared_attr, sessionmaker
 
@@ -12,8 +14,15 @@ class PreBase:
 
 
 Base = declarative_base(cls=PreBase)
+engine = create_async_engine(
+    settings.DATABASE_URL,
+    pool_size=10,
+    max_overflow=20,
+    echo=True,
+)
+
 engine = create_async_engine(settings.DATABASE_URL, echo=True)
-AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession)
+AsyncSessionLocal = sessionmaker(bind=engine, class_=AsyncSession)
 
 
 async def get_async_session():
