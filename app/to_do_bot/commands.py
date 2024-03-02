@@ -35,11 +35,21 @@ async def command_start(message: Message, state: MemoryStorage) -> None:
     await send_message_with_state(message, state, text, new_state=StateAdmin.start_menu)
 
 
-# @command_router.message(Command("task_creation"))
-# async def command_task(message: Message, state: FSMContext):
-#     await send_message_with_state(
-#         message, state, "Переходим в меню создания новой задачи", reply_markup=work_keyboard, new_state=StateAdmin.task_creation
+# @command_router.message(Command("start"))
+# async def command_start(message: Message, state: MemoryStorage) -> None:
+#     text = (
+#         f"Добрый день, {message.from_user.full_name}!\n"
+#         "Выберите действие из меню ниже:"
 #     )
+
+#     keyboard = InlineKeyboardMarkup()
+#     keyboard.add(
+#         InlineKeyboardButton(text="Создать задачу", callback_data="create_task"),
+#         InlineKeyboardButton(text="Просмотреть задачи", callback_data="view_tasks"),
+#         InlineKeyboardButton(text="Завершить задачу", callback_data="complete_task"),
+#     )
+
+#     await send_message_with_state(message, state, text, reply_markup=keyboard)
 
 @command_router.message(Command("task_creation"))
 async def command_create_task(message: Message, state: MemoryStorage) -> None:
