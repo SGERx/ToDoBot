@@ -6,7 +6,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from app.to_do_bot.env_loader import BOT_TOKEN
 from app.to_do_bot.handlers.handlers_task_creation import task_router
 
-from .commands import command_router
+from .commands import command_router, keyboard_router
 
 logger_to_do_bot = logging.getLogger(__name__)
 
@@ -24,6 +24,7 @@ async def main_bot():
     admin_dp = Dispatcher(storage=admin_storage)
     admin_dp.include_router(command_router)
     admin_dp.include_router(task_router)
+    admin_dp.include_router(keyboard_router)
 
     await to_do_bot.delete_webhook(drop_pending_updates=True)
     await admin_dp.start_polling(to_do_bot)

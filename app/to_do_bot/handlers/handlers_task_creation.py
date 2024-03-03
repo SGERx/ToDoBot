@@ -1,12 +1,16 @@
-from datetime import datetime
+from datetime import datetime, time
 
-from aiogram import F, Router
+from aiogram import F, Router, types
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message
-from app.crud.task import TaskCRUD
+from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.types import (CallbackQuery, InlineKeyboardButton,
+                           InlineKeyboardMarkup, Message, ReplyKeyboardRemove)
 
+from app.core.db import AsyncSessionLocal
+from app.crud.task import TaskCRUD
 from app.crud.user import UserCRUD
+from app.models.task import Task
 from app.to_do_bot.utils import parse_date, parse_time
 
 from ..keyboards.task_keyboard import task_confirmation_keyboard
@@ -14,15 +18,6 @@ from ..states import StateAdmin
 
 task_router = Router()
 task_crud = TaskCRUD()
-
-
-# Создание новой задачи - шаг 1
-
-# @task_router.message(Command("task_creation"))
-# async def task_creation_one(callback: CallbackQuery, state: FSMContext):
-#     await state.set_state(StateAdmin.task_creation_one)
-#     await callback.message.answer(text="Cоздание новой задачи - введите заголовок новой задачи")
-#     await state.set_state(StateAdmin.task_creation_two)
 
 
 # Создание новой задачи - шаг 2
@@ -52,42 +47,38 @@ async def task_creation_three(message: Message, state: FSMContext):
 @task_router.message(StateFilter(StateAdmin.task_creation_four))
 async def task_creation_four(message: Message, state: FSMContext):
     gathered_date = message.text
-    await state.update_data(date=gathered_date)
-    print(message.text)
-    await message.reply(f"Введена дата задачи - {gathered_date}, введите время задачи")
+    try:
+        task_date_formatted = parse_date(gathered_date)
+    except ValueError:
+        await message.reply("Неверный формат даты. Пожалуйста, введите дату в одном из форматов: 'ДДММГГГГ' 'ДД-ММ-ГГГГ', 'ДД/ММ/ГГГГ', 'ГГГГ/ММ/ДД', 'ГГГГ-ММ-ДД'")
+        return
+    await state.update_data(date=task_date_formatted)
+    await message.reply(f"Введена дата задачи - {task_date_formatted}, введите время задачи")
     await state.set_state(StateAdmin.task_creation_five)
 
 
 # Создание новой задачи - шаг 5
 
-# @task_router.message(StateFilter(StateAdmin.task_creation_five))
-# async def task_creation_five(message: Message, state: FSMContext):
-#     gathered_time = message.text
-#     await state.update_data(time=gathered_time)
-#     print(message.text)
-#     await message.reply(f"Введено время задачи - {gathered_time}, введите время задачи")
-#     await state.set_state(StateAdmin.task_creation_six)
-
-
-# Создание новой задачи - шаг 6
-
-
-
 @task_router.message(StateFilter(StateAdmin.task_creation_five))
 async def task_creation_six(message: Message, state: FSMContext):
     gathered_time = message.text
-    await state.update_data(time=gathered_time)
-    print(message.text)
+    try:
+        task_time_formatted = parse_time(gathered_time)
+    except ValueError:
+        await message.reply("Неверный формат времени. Пожалуйста, введите время в одном из форматов: 'ЧЧ:ММ:СС', 'ЧЧ:ММ', 'ЧЧ', 'ЧЧ-ММ-СС', 'ЧЧ-ММ'")
+        return
+
+    await state.update_data(time=task_time_formatted)
     await state.set_state(StateAdmin.task_creation_six)
+
     create_task_data = await state.get_data()
     task_title = create_task_data['title']
     task_description = create_task_data['description']
     task_date = create_task_data['date']
-    task_date_formatted = parse_date(task_date)
     task_time = create_task_data['time']
 
     await message.reply(f"Подтвердите создание задачи - заголовок '{task_title}',"
-                        f"описание {task_description}, дата {task_date_formatted}, время {task_time}",
+                        f"описание {task_description}, дата {task_date}, время {task_time}",
                         reply_markup=task_confirmation_keyboard)
 
 
@@ -114,9 +105,10 @@ async def task_creation_confirmation(callback: CallbackQuery, state: FSMContext)
     task_title = create_task_data['title']
     task_description = create_task_data['description']
     task_date = create_task_data['date']
-    task_date_formatted = parse_date(task_date)
+    task_date_formatted = parse_date(str(task_date))
+    # task_date_formatted = parse_date(task_date)
     task_time = create_task_data['time']
-    task_time_formatted = parse_time(task_time)
+    task_time_formatted = parse_time(str(task_time))
 
     new_task_data = {
         "title": task_title,
@@ -127,10 +119,7 @@ async def task_creation_confirmation(callback: CallbackQuery, state: FSMContext)
     }
     try:
         await task_crud.create(**new_task_data)
-        await callback.message.answer(text="Создание задачи подтверждено               \n"
-                                      "Для перезапуска нажмите             /start \n"
-                                      "Для записи новой задачи нажмите      /task_creation \n"
-                                      "Для просмотра существующих задач нажмите    /view_tasks \n")
+        await callback.message.answer(text="Создание задачи подтверждено")
     except Exception as e:
         print(f"Ошибка создания задачи: {e}")
         await callback.message.answer(f"Ошибка создания задачи: {e}")
