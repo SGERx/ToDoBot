@@ -1,9 +1,5 @@
-from sqlalchemy import (Column, Date, ForeignKey, Integer, String, Text, Time,
-                        select)
+from sqlalchemy import Column, Date, Integer, String, Text, Time, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import (Mapped, Session, mapped_column, relationship,
-                            selectinload)
 
 from app.core.db import Base
 
@@ -12,7 +8,6 @@ class Task(Base):
     __tablename__ = 'tasks'
 
     id = Column(Integer, primary_key=True)
-    # user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=False)
     task_date = Column(Date)

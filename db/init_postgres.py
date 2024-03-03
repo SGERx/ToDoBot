@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import os
-import sys
 from pathlib import Path
 
 import psycopg2
@@ -9,8 +8,6 @@ from loguru import logger
 from psycopg2 import sql
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
-# reload(sys)
-# sys.setdefaultencoding('utf-8')
 logger.add("logs/db_script.log", rotation="100 MB", level="INFO")
 
 

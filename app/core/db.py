@@ -1,6 +1,5 @@
 import functools
 
-# from app.core.config import create_async_db_engine
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base, declared_attr, sessionmaker
 
@@ -9,7 +8,7 @@ from app.core.config import settings
 
 class PreBase:
     @declared_attr
-    def __tablename__(cls):
+    def __tablename__(self, cls):
         return cls.__name__.lower()
 
 
@@ -41,7 +40,5 @@ def with_async_session(async_session_func):
         async def wrapper(*args, **kwargs):
             async for session in get_async_session():
                 return await func(session, *args, **kwargs)
-
         return wrapper
-
     return decorator

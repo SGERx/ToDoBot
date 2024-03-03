@@ -1,0 +1,13 @@
+[flake8]
+extend-ignore = E501, R503
+exclude =
+    migrations
+    __pycache__
+    manage.py
+    settings.py
+    env
+    .env
+    venv
+    /venv
+    .\.venv
+

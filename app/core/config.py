@@ -1,7 +1,6 @@
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
-# from sqlalchemy.ext.asyncio import create_async_engine
 
 
 class Settings(BaseSettings):

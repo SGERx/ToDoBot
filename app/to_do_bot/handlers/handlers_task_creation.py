@@ -1,16 +1,9 @@
-from datetime import datetime, time
-
-from aiogram import F, Router, types
-from aiogram.filters import Command, StateFilter
+from aiogram import F, Router
+from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.types import (CallbackQuery, InlineKeyboardButton,
-                           InlineKeyboardMarkup, Message, ReplyKeyboardRemove)
+from aiogram.types import CallbackQuery, Message
 
-from app.core.db import AsyncSessionLocal
 from app.crud.task import TaskCRUD
-from app.crud.user import UserCRUD
-from app.models.task import Task
 from app.to_do_bot.utils import parse_date, parse_time
 
 from ..keyboards.task_keyboard import task_confirmation_keyboard

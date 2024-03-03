@@ -1,5 +1,4 @@
 import asyncio
-import sys
 
 from app.to_do_bot.bot_main import main_bot
 
